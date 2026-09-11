@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     CityListScreen(
                         cities = cityRepository.cities,
+                        onDelCity = { cityRepository.delCity(it)}, // added del city functionality in instantiation constructor, same format as add city from lab
                         onAddCity = { cityRepository.addCity(it)},
                         modifier = Modifier.padding(innerPadding)
                     )
@@ -77,14 +79,26 @@ class CityRepository{
     fun addCity(city: String) {
         _cities.add(city)
     }
+
+    fun delCity(city: String) {
+        _cities.remove(city)
+    }
 }
 
 @Composable
 fun CityListScreen(
     cities: List<String>,
+
+    // added delCity functionality
+    onDelCity: (String) -> Unit,
     onAddCity: (String) -> Unit,
+
     modifier: Modifier = Modifier
+
 ) {
+    // added new var to remember selected city, again same logic as from the lab. initialize as blank string and check if is empty on click
+    // between clicks, reset the string to be empty again when click is handled in onClick
+    var hoveredCity by remember { mutableStateOf("") }
     var newCityName by remember { mutableStateOf(value = "") }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -109,22 +123,35 @@ fun CityListScreen(
                 Text("Add City")
             }
 
+            // added a new button under the same column padding modifier thing made in lab so it is displayed nicely on the right
+            // it contains largely the same logic as the add button made in lab
+            Button(
+                onClick = {
+                    if (hoveredCity.isNotBlank()){
+                        onDelCity(hoveredCity)
+                        hoveredCity = ""
+                    }
+                }
+            ){
+                Text("Delete City")
+            }
         }
+
 
         LazyColumn(modifier = modifier.fillMaxSize()) {
             items(cities) { city ->
-                CityRow(city = city)
+                CityRow(city = city, clicked = { hoveredCity = city }) // added clicked function
             }
         }
     }
 }
 
 @Composable
-fun CityRow(city: String){
+fun CityRow(city: String, clicked: () -> Unit){ //added promise of click function being declared later
     Text(
         text = city,
         fontSize = 28.sp,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp)
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 14.dp).clickable {clicked()} //added clickable import, now it will call clicked() when a city in the list is clicked
     )
 }
 
